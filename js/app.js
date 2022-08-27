@@ -1,69 +1,128 @@
-const canvasWidth = 505;
-const canvasHeight = 605;
-const cellHeight = 83;
-const cellWidth = 101;
-
-
-
-// Enemies our player must avoid
-
+const SCORE = 0;
+const CANVAS = {
+    width: 505,
+    height: 605,
+    cellHeight: 83,
+    cellWidth: 101,
+};
+const RESET_ENEMIES_SPEED = function () {
+    for (let i = 0; i < allEnemies.length; i++) {
+        allEnemies[i].speed = Math.floor(Math.random() * (100 - 40)) + 40;
+    }
+};
 class Enemy {
-    constructor(x, y, speed,) {
+    constructor({ x, y, speed, boardWidth, player, width, height, resetEnemiesSpeed }) {
         this.x = x;
         this.y = y;
-        this.speed = speed
+        this.speed = speed;
+        this.defaultSpeed = speed;
+        this.boardWidth = boardWidth;
+        this.width = width;
+        this.height = height;
+        this.player = player;
         this.sprite = 'images/enemy-bug.png';
+        this.score = 0;
+        this.resetEnemiesSpeed = resetEnemiesSpeed
     };
-    // Update the enemy's position, required method for game
-    // Parameter: dt, a time delta between ticks
     update = function (dt) {
-        // You should multiply any movement by the dt parameter
-        // which will ensure the game runs at the same speed for
-        // all computers.
+        this.x += dt * this.speed;
+        this.handleCollision();
+        if (this.x >= this.boardWidth) {
+            this.x = 0;
+        };
+        if (this.player.score !== this.score) {
+            this.score = this.player.score;
+            this.speed += 40;
+        };
     };
-    // Draw the enemy on the screen, required method for game
     render = function () {
         ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
-    }
-}
-
-// Now write your own player class
-// This class requires an update(), render() and
-// a handleInput() method.
-
+    };
+    handleCollision = function () {
+        if (
+            this.x + this.width > this.player.x &&
+            this.y > this.player.y - this.player.height &&
+            this.player.x + this.player.width > this.x &&
+            this.player.y > this.y - this.height
+        ) {
+            this.player.score = 0;
+            this.score = 0;
+            this.resetEnemiesSpeed();
+            alert(`You lose! Score: ${this.player.score}`);
+            this.player.resetPosition();
+        };
+    };
+};
 class Player {
-    constructor(x, y) {
-        this.x = x;
-        this.y = y;
+    constructor({ boardWidth, boardHeight, stepX, stepY, score }) {
         this.sprite = 'images/char-boy.png';
+        this.boardWidth = boardWidth;
+        this.boardHeight = boardHeight;
+        this.stepX = stepX;
+        this.stepY = stepY;
+        this.height = 50;
+        this.width = 50;
+        this.score = score;
+        this.x = this.boardWidth - 3 * this.stepX;
+        this.y = this.boardHeight - 2.5 * this.stepY;
     }
     update = function (dt) {
-        // You should multiply any movement by the dt parameter
-        // which will ensure the game runs at the same speed for
-        // all computers.
     };
     render = function (dt) {
-        // You should multiply any movement by the dt parameter
-        // which will ensure the game runs at the same speed for
-        // all computers.
+        ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
     };
-    handleInput = function (dt) {
-        // You should multiply any movement by the dt parameter
-        // which will ensure the game runs at the same speed for
-        // all computers.
+    resetPosition() {
+        this.x = this.boardWidth - 3 * this.stepX;
+        this.y = this.boardHeight - 2.5 * this.stepY;
     };
-}
-
-
-
-// Now instantiate your objects.
-// Place all enemy objects in an array called allEnemies
-// Place the player object in a variable called player
-const allEnemies = []
-allEnemies.push(new Enemy())
-const player = new Player(83, 101);
-// This listens for key presses and sends the keys to your
-// Player.handleInput() method. You don't need to modify this.
+    handleInput = function (key) {
+        switch (key) {
+            case "up":
+                if (this.y > 0) this.y -= this.stepY;
+                if (this.y < 0) {
+                    setTimeout(() => {
+                        this.score++
+                        alert(`You won! Score:  ${this.score}`);
+                        this.resetPosition();
+                    }, 50)
+                };
+                break;
+            case "down":
+                if (this.y < this.boardHeight - 3 * this.stepY) this.y += this.stepY;
+                break;
+            case "left":
+                if (this.x > 0) this.x -= this.stepX;
+                break;
+            case "right":
+                if (this.x < this.boardWidth - this.stepX) this.x += this.stepX;
+                break;
+            default:
+                break;
+        };
+    };
+};
+const player = new Player({
+    boardWidth: CANVAS.width,
+    boardHeight: CANVAS.height,
+    boardWidth: CANVAS.width,
+    stepX: CANVAS.cellWidth,
+    stepY: CANVAS.cellHeight,
+    score: SCORE,
+});
+const allEnemies = [];
+for (let i = 0; i < 3; i++) {
+    allEnemies.push(new Enemy({
+        x: CANVAS.width - 6 * CANVAS.cellWidth,
+        y: CANVAS.height - (4.5 + i) * CANVAS.cellHeight,
+        speed: Math.floor(Math.random() * (100 - 40)) + 40,
+        boardWidth: CANVAS.width,
+        player: player,
+        width: CANVAS.cellWidth,
+        height: CANVAS.cellHeight,
+        resetEnemiesSpeed: RESET_ENEMIES_SPEED,
+    }));
+};
+console.log(allEnemies)
 document.addEventListener('keyup', function (e) {
     var allowedKeys = {
         37: 'left',
@@ -71,6 +130,7 @@ document.addEventListener('keyup', function (e) {
         39: 'right',
         40: 'down'
     };
-
     player.handleInput(allowedKeys[e.keyCode]);
 });
+
+
