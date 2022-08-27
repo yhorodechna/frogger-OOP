@@ -5,6 +5,8 @@ const CANVAS = {
     cellHeight: 83,
     cellWidth: 101,
 };
+/* The function RESET_ENEMIES_SPEED add for each enemy random speed. This function is used in class Enemy 
+to reset the speed of each enemy when a player loses */
 const RESET_ENEMIES_SPEED = function () {
     for (let i = 0; i < allEnemies.length; i++) {
         allEnemies[i].speed = Math.floor(Math.random() * (100 - 40)) + 40;
@@ -17,13 +19,19 @@ class Enemy {
         this.speed = speed;
         this.defaultSpeed = speed;
         this.boardWidth = boardWidth;
-        this.width = width;
-        this.height = height;
+        this.width = width - 20;
+        this.height = height - 20;
         this.player = player;
         this.sprite = 'images/enemy-bug.png';
         this.score = 0;
         this.resetEnemiesSpeed = resetEnemiesSpeed
     };
+    /* Method  update contains :
+        update enemy speed,
+        checks collision enemy with player, 
+        checks if enemy goes out of bounds game board and return it to beginning,
+        increases speed of enemies when the player passes the level
+     */
     update = function (dt) {
         this.x += dt * this.speed;
         this.handleCollision();
@@ -38,6 +46,12 @@ class Enemy {
     render = function () {
         ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
     };
+    /* Method handleCollision checks collision enemy with player.
+    when they collide the following actions take place :
+        resets score ,
+        is used method resetEnemiesSpeed witch reset enemy speed,
+        the player is notified of his loss,
+        is used method resetPosition witch reset player position */
     handleCollision = function () {
         if (
             this.x + this.width > this.player.x &&
@@ -71,10 +85,16 @@ class Player {
     render = function (dt) {
         ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
     };
+    /* Method resetPosition reset player position */
     resetPosition() {
         this.x = this.boardWidth - 3 * this.stepX;
         this.y = this.boardHeight - 2.5 * this.stepY;
     };
+    /* Method handleInput depending on pressed key performs player actions (movements up, down,left,right )
+    when player moves up it is checked whether the player entered the water and if check passed the following actions take place :
+        player goes to the next level (score + 1)
+        the player is notified of his won,
+        is used method resetPosition witch reset player position */
     handleInput = function (key) {
         switch (key) {
             case "up":
